@@ -1,0 +1,27 @@
+# Keybindings require three things to be fully defined: A selector that is
+# matched against the focused element, the keystroke and the command to
+# execute.
+#
+# Below is a basic keybinding which registers on all platforms by applying to
+# the root workspace element.
+
+# For more detailed documentation see
+# https://atom.io/docs/latest/advanced/keymaps
+
+'.platform-darwin atom-workspace':
+  'shift-enter': 'ult-terminal:toggle'
+  'cmd-shift-e': 'ult-terminal:new'
+  'cmd-shift-j': 'ult-terminal:next'
+  'cmd-shift-k': 'ult-terminal:prev'
+  'cmd-shift-x': 'ult-terminal:destroy'
+
+'.platform-linux atom-workspace, .platform-win32 atom-workspace':
+  'shift-enter': 'ult-terminal:toggle'
+  'alt-shift-t': 'ult-terminal:new'
+  'alt-shift-j': 'ult-terminal:next'
+  'alt-shift-k': 'ult-terminal:prev'
+  'alt-shift-x': 'ult-terminal:destroy'
+
+'.ult-terminal':
+  'cmd-c': 'native!'
+  'ctrl-c': 'native!'

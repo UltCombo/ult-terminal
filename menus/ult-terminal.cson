@@ -1,0 +1,17 @@
+# See https://atom.io/docs/latest/creating-a-package#menus
+# for more details
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Ult Terminal'
+      'submenu': [
+        { 'label': 'New', 'command': 'ult-terminal:new' }
+        { 'label': 'Toggle', 'command': 'ult-terminal:toggle' }
+        { 'label': 'Prev', 'command': 'ult-terminal:prev' }
+        { 'label': 'Next', 'command': 'ult-terminal:next' }
+        { 'label': 'Destroy active', 'command': 'ult-terminal:destroy' }
+      ]
+    ]
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "name": "ult-terminal",
+  "main": "./lib/ult-terminal",
+  "version": "0.0.0",
+  "description": "UltCombo's Atom terminal.",
+  "homepage": "https://github.com/UltCombo/ult-terminal",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UltCombo/ult-terminal"
+  },
+  "bugs": {
+    "url": "https://github.com/UltCombo/ult-terminal/issues"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ansi-html-stream": "^0.0.3",
+    "domify": "^1.3.3",
+    "atom-space-pen-views": "^2.0.5"
+  },
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  }
+}
