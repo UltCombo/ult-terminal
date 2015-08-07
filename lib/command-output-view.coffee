@@ -84,7 +84,7 @@ class CommandOutputView extends View
       return @ls args
     if cmd == 'clear'
       @cliOutput.empty()
-      @message '\n'
+      @message ''
       return @cmdEditor.setText ''
     @spawn inputCmd, cmd, args
 
