@@ -215,7 +215,7 @@ class CommandOutputView extends View
     @statusIcon.classList.add 'status-success'
 
   errorMessage: (message) ->
-    @cliOutput.append message
+    @cliOutput.append(if message.endsWith('\n') then message else message + '\n')
     @showCmd()
     @statusIcon.classList.remove 'status-success'
     @statusIcon.classList.add 'status-error'
