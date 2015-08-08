@@ -1,10 +1,10 @@
+fs = require 'fs'
+{resolve} = require 'path'
+{spawn, exec} = require 'child_process'
+readline = require 'readline'
 {TextEditorView} = require 'atom-space-pen-views'
 {View} = require 'atom-space-pen-views'
-{spawn, exec} = require 'child_process'
 ansihtml = require 'ansi-html-stream'
-readline = require 'readline'
-{resolve} = require 'path'
-fs = require 'fs'
 
 lastOpenedView = null
 
@@ -26,14 +26,12 @@ class CommandOutputView extends View
             @span 'close'
       @div class: 'cli-panel-body', =>
         @pre class: "terminal", outlet: "cliOutput",
-          "Welcome to ult-terminal."
+          "Welcome to ult-terminal.\n"
         @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 
   initialize: ->
     atom.config.observe 'ult-terminal.paneWidth', (paneWidth) =>
       @css 'width', paneWidth
-
-    @userHome = process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE
 
     # assigned = false
     #
@@ -67,16 +65,12 @@ class CommandOutputView extends View
     atom.commands.add '.panel.ult-terminal', "core:confirm", => @readLine()
 
   readLine: ->
-    inputCmd = @cmdEditor.getModel().getText()
+    inputCmd = @cmdEditor.getModel().getText().trim()
 
-    @cliOutput.append "\n$ #{inputCmd}\n"
+    @cliOutput.append "$ #{inputCmd}\n"
     @scrollToBottom()
-    args = []
     # support 'a b c' and "foo bar"
-    inputCmd.replace /("[^"]*"|'[^']*'|[^\s'"]+)/g, (s) =>
-      if s[0] != '"' and s[0] != "'"
-        s = s.replace /~/g, @userHome
-      args.push s
+    args = inputCmd.match(/("[^"]*"|'[^']*'|[^\s'"]+)/g) ? []
     cmd = args.shift()
     if cmd == 'cd'
       return @cd args
@@ -86,7 +80,7 @@ class CommandOutputView extends View
       @cliOutput.empty()
       @message ''
       return @cmdEditor.setText ''
-    @spawn inputCmd, cmd, args
+    @spawn inputCmd
 
   showCmd: ->
     @cmdEditor.show()
@@ -106,17 +100,15 @@ class CommandOutputView extends View
     @timer = setTimeout onStatusOut, time
 
   destroy: ->
-    _destroy = =>
+    if @program
+      @program.once 'exit', _destroy
+      @program.kill()
+    else
       if @hasParent()
         @close()
       if @statusIcon and @statusIcon.parentNode
         @statusIcon.parentNode.removeChild(@statusIcon)
       @statusView.removeCommandView this
-    if @program
-      @program.once 'exit', _destroy
-      @program.kill()
-    else
-      _destroy()
 
   kill: ->
     if @program
@@ -145,7 +137,7 @@ class CommandOutputView extends View
     else
       @open()
 
-  cd: (args)->
+  cd: (args) ->
     args = [@getCwd()] if not args[0]
     dir = resolve @getCwd(), args[0]
     fs.stat dir, (err, stat) =>
@@ -158,7 +150,7 @@ class CommandOutputView extends View
       @cwd = dir
       @message "cwd: #{@cwd}"
 
-  ls: (args)->
+  ls: (args) ->
     files = fs.readdirSync @getCwd()
     filesBlocks = []
     files.forEach (filename) =>
@@ -178,7 +170,7 @@ class CommandOutputView extends View
       b[0]
     @message filesBlocks.join('') + '<div class="clear"/>'
 
-  _fileInfoHtml: (filename, parent)->
+  _fileInfoHtml: (filename, parent) ->
     classes = ['icon', 'file-info']
     filepath = parent + '/' + filename
     stat = fs.lstatSync filepath
@@ -206,18 +198,18 @@ class CommandOutputView extends View
     # other stat info
     ["<span class=\"#{classes.join ' '}\">#{filename}</span>", stat, filename]
 
-  getGitStatusName: (path, gitRoot, repo) ->
-    status = (repo.getCachedPathStatus or repo.getPathStatus)(path)
-    if status
-      if repo.isStatusModified status
-        return 'modified'
-      if repo.isStatusNew status
-        return 'added'
-    if repo.isPathIgnore path
-      return 'ignored'
+  # getGitStatusName: (path, gitRoot, repo) ->
+  #   status = (repo.getCachedPathStatus or repo.getPathStatus)(path)
+  #   if status
+  #     if repo.isStatusModified status
+  #       return 'modified'
+  #     if repo.isStatusNew status
+  #       return 'added'
+  #   if repo.isPathIgnore path
+  #     return 'ignored'
 
   message: (message) ->
-    @cliOutput.append message
+    @cliOutput.append(if message.endsWith('\n') then message else message + '\n')
     @showCmd()
     @statusIcon.classList.remove 'status-error'
     @statusIcon.classList.add 'status-success'
@@ -228,7 +220,7 @@ class CommandOutputView extends View
     @statusIcon.classList.remove 'status-success'
     @statusIcon.classList.add 'status-error'
 
-  getCwd: ()->
+  getCwd: ->
     editor = atom.workspace.getActiveTextEditor()
     rootDirs = atom.project.rootDirectories
     activeRootDir = 0;
@@ -239,11 +231,11 @@ class CommandOutputView extends View
     if rootDirs.length == 0
       rootDirs = false
 
-    @cwd = @cwd or (rootDirs[activeRootDir] and rootDirs[activeRootDir].path) or @userHome
+    @cwd ?= (rootDirs[activeRootDir] and rootDirs[activeRootDir].path)
 
     @cwd
 
-  spawn: (inputCmd, cmd, args) ->
+  spawn: (inputCmd) ->
     @cmdEditor.hide()
     htmlStream = ansihtml()
     htmlStream.on 'data', (data) =>
