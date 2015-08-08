@@ -221,19 +221,14 @@ class CommandOutputView extends View
     @statusIcon.classList.add 'status-error'
 
   getCwd: ->
-    editor = atom.workspace.getActiveTextEditor()
-    rootDirs = atom.project.rootDirectories
-    activeRootDir = 0;
-    for i in [0..rootDirs.length]
-      if editor and rootDirs[i] and rootDirs[i].contains(editor.getPath())
-        activeRootDir = i
-
-    if rootDirs.length == 0
-      rootDirs = false
-
-    @cwd ?= (rootDirs[activeRootDir] and rootDirs[activeRootDir].path)
-
-    @cwd
+    return @cwd if @cwd?
+    editorPath = atom.workspace.getActiveTextEditor()?.getPath()
+    return if not editorPath?
+    activeRootDir = null
+    @cwd = activeRootDir.path if atom.project.rootDirectories.some (rootDir) ->
+      if rootDir.contains(editorPath)
+        activeRootDir = rootDir
+        true
 
   spawn: (inputCmd) ->
     @cmdEditor.hide()
