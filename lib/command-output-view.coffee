@@ -36,6 +36,9 @@ class CommandOutputView extends View
     atom.config.observe 'ult-terminal.paneWidth', (paneWidth) =>
       @css 'width', paneWidth
 
+    this.on 'click', '[data-targettype]', ->
+      atom.workspace.open this.dataset.target if this.dataset.targettype is 'file'
+
     # tree-kill does not support SIGINT on Windows
     @interruptBtn.detach() if isWin
 
@@ -80,6 +83,8 @@ class CommandOutputView extends View
     # support 'a b c' and "foo bar"
     args = inputCmd.match(/("[^"]*"|'[^']*'|[^\s'"]+)/g) ? []
     cmd = args.shift()
+    if not cmd
+      return
     if cmd == 'cd'
       return @cd args
     if cmd == 'ls'
@@ -90,8 +95,6 @@ class CommandOutputView extends View
       return @cmdEditor.setText ''
     if cmd == 'exit'
       return @destroy()
-    if not cmd
-      return
     @spawn inputCmd
 
   showCmd: ->
@@ -173,7 +176,7 @@ class CommandOutputView extends View
     filesBlocks = []
     files.forEach (filename) =>
       try
-        filesBlocks.push @_fileInfoHtml(filename, @getCwd())
+        filesBlocks.push @_fileInfoHtml filename, @getCwd(), ['file-info']
       catch
         console.log "#{filename} couln't be read"
     filesBlocks = filesBlocks.sort (a, b)->
@@ -188,33 +191,50 @@ class CommandOutputView extends View
       b[0]
     @message filesBlocks.join('') + '<div class="clear"/>'
 
-  _fileInfoHtml: (filename, parent) ->
-    classes = ['icon', 'file-info']
+  _fileInfoHtml: (filename, parent, extraClasses = []) ->
+    classes = ['icon'].concat extraClasses
     filepath = parent + '/' + filename
     stat = fs.lstatSync filepath
     if stat.isSymbolicLink()
       # classes.push 'icon-file-symlink-file'
       classes.push 'stat-link'
       stat = fs.statSync filepath
+      targetType = 'null'
     if stat.isFile()
       if stat.mode & 73 #0111
         classes.push 'stat-program'
       # TODO check extension
       classes.push 'icon-file-text'
+      targetType = 'file'
     if stat.isDirectory()
       classes.push 'icon-file-directory'
+      targetType = 'directory'
     if stat.isCharacterDevice()
       classes.push 'stat-char-dev'
+      targetType = 'device'
     if stat.isFIFO()
       classes.push 'stat-fifo'
+      targetType = 'fifo'
     if stat.isSocket()
       classes.push 'stat-sock'
+      targetType = 'sock'
     if filename[0] == '.'
       classes.push 'status-ignored'
     # if statusName = @getGitStatusName filepath
     #   classes.push statusName
     # other stat info
-    ["<span class=\"#{classes.join ' '}\">#{filename}</span>", stat, filename]
+    ["<span class=\"#{classes.join ' '}\" data-targettype=\"#{targetType}\" data-target=\"#{filepath}\">#{filename}</span>", stat, filename]
+
+  linkify: (str) ->
+    escapedCwd = @getCwd().split(/\/|\\/g).map((segment) -> segment.replace /\W/g, '\\$&').join '[\\\\\\/]'
+    rFilepath = new RegExp '(' + escapedCwd + ')[\\\\\\/]([^\\s:#$%^&!:]| )+\\.?([^\\s:#$@%&\\*\\^!0-9:\\.+\\-,\\\\\\/\"]| )*', 'ig'
+    rInCwd = null
+    str.replace rFilepath, (match) =>
+      try
+        rInCwd ?= new RegExp '^' + escapedCwd + '[\\\\\\/]', 'i'
+        @_fileInfoHtml(match.replace(rInCwd, ''), @getCwd())[0]
+      catch err
+        match
 
   # getGitStatusName: (path, gitRoot, repo) ->
   #   status = (repo.getCachedPathStatus or repo.getPathStatus)(path)
@@ -227,13 +247,13 @@ class CommandOutputView extends View
   #     return 'ignored'
 
   message: (message) ->
-    @cliOutput.append(if message.endsWith('\n') then message else message + '\n')
+    @cliOutput.append @linkify(if message.endsWith('\n') then message else message + '\n')
     @showCmd()
     @statusIcon.classList.remove 'status-error'
     @statusIcon.classList.add 'status-success'
 
   errorMessage: (message) ->
-    @cliOutput.append(if message.endsWith('\n') then message else message + '\n')
+    @cliOutput.append @linkify(if message.endsWith('\n') then message else message + '\n')
     @showCmd()
     @statusIcon.classList.remove 'status-success'
     @statusIcon.classList.add 'status-error'
@@ -252,7 +272,7 @@ class CommandOutputView extends View
     @cmdEditor.hide()
     htmlStream = ansihtml()
     htmlStream.on 'data', (data) =>
-      @cliOutput.append data
+      @cliOutput.append @linkify data
       @scrollToBottom()
     try
       # @program = spawn cmd, args, stdio: 'pipe', env: process.env, cwd: @getCwd()

@@ -33,6 +33,9 @@
     overflow-y: scroll;
     bottom: @component-padding;
 
+    .icon:before {
+      margin-right: 0;
+    }
     .file-info {
       width: 140px;
       float: left;
@@ -46,6 +49,10 @@
     }
     .clear {
       clear: both;
+    }
+
+    [data-targettype=file] {
+      cursor: pointer;
     }
   }
   atom-text-editor {
