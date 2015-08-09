@@ -20,9 +20,6 @@ class CliStatusView extends View
       'ult-terminal:prev': => @activePrevCommandView()
       'ult-terminal:destroy': => @destroyActiveTerm()
 
-    @createCommandView()
-    @attach()
-
   createCommandView: ->
     termStatus = domify '<span class="ult-terminal icon icon-terminal"></span>'
     commandOutputView = new CommandOutputView
@@ -53,6 +50,7 @@ class CliStatusView extends View
   removeCommandView: (commandView) ->
     index = @commandViews.indexOf commandView
     index >=0 and @commandViews.splice index, 1
+    @activeIndex-- if not @commandViews[@activeIndex]? and @activeIndex > 0
 
   newTermClick: ->
     @createCommandView().toggle()
@@ -67,9 +65,8 @@ class CliStatusView extends View
 
   # Tear down any state and detach
   destroy: ->
-    for index in [@commandViews.length .. 0]
-      commandView.kill() # FIXME doesn't seem to be working
-      @removeCommandView @commandViews[index]
+    for index in [@commandViews.length - 1 .. 0] by -1
+      @commandViews[index].destroy()
     @detach()
 
   toggle: ->

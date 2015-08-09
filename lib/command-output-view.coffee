@@ -125,7 +125,7 @@ class CommandOutputView extends View
       @statusView.removeCommandView this
     if @program
       @program.once 'exit', _destroy
-      @program.kill()
+      @kill()
     else
       _destroy()
 
@@ -229,12 +229,10 @@ class CommandOutputView extends View
 
   linkify: (str) ->
     escapedCwd = @getCwd().split(/\/|\\/g).map((segment) -> segment.replace /\W/g, '\\$&').join '[\\\\/]'
-    rFilepath = new RegExp escapedCwd + '[\\\\/][^\\n\\r\\t:#$%^&!:<>]+\\.?[^\\n\\r\\t:#$@%&*^!:.+,\\\\/"<>]*', 'ig'
-    rInCwd = null
-    str.replace rFilepath, (match) =>
+    rFilepath = new RegExp escapedCwd + '[\\\\/]([^\\n\\r\\t:#$%^&!:<>]+\\.?[^\\n\\r\\t:#$@%&*^!:.+,\\\\/"<>]*)', 'ig'
+    str.replace rFilepath, (match, relativeFilepath) =>
       try
-        rInCwd ?= new RegExp '^' + escapedCwd + '[\\\\/]', 'i'
-        @_fileInfoHtml(match.replace(rInCwd, ''), @getCwd())[0]
+        @_fileInfoHtml(relativeFilepath, @getCwd())[0]
       catch err
         match
 

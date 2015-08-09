@@ -4,9 +4,14 @@ module.exports =
   cliStatusView: null
 
   activate: (state) ->
-    createStatusEntry = =>
-      @cliStatusView = new UltTerminalView(state.cliStatusViewState)
-    atom.packages.onDidActivateInitialPackages => createStatusEntry()
+    cb = =>
+      @cliStatusView ?= new UltTerminalView(state.cliStatusViewState)
+      @cliStatusView.createCommandView()
+      @cliStatusView.attach()
+    if atom.packages.isPackageActive 'status-bar'
+      cb()
+    else
+      atom.packages.onDidActivateInitialPackages cb
 
   deactivate: ->
     @cliStatusView.destroy()
