@@ -1,11 +1,12 @@
 fs = require 'fs'
 {resolve} = require 'path'
-{spawn, exec} = require 'child_process'
-readline = require 'readline'
+{exec} = require 'child_process'
 {TextEditorView} = require 'atom-space-pen-views'
 {View} = require 'atom-space-pen-views'
 ansihtml = require 'ansi-html-stream'
+kill = require 'tree-kill'
 
+isWin = process.platform is 'win32'
 lastOpenedView = null
 
 module.exports =
@@ -15,6 +16,8 @@ class CommandOutputView extends View
     @div tabIndex: -1, class: 'panel panel-right ult-terminal', =>
       @div class: 'panel-heading', =>
         @div class: 'btn-group', =>
+          @button outlet: 'interruptBtn', click: 'interrupt', class: 'btn hide', =>
+            @span 'interrupt'
           @button outlet: 'killBtn', click: 'kill', class: 'btn hide', =>
             # @span class: "icon icon-x"
             @span 'kill'
@@ -32,6 +35,9 @@ class CommandOutputView extends View
   initialize: ->
     atom.config.observe 'ult-terminal.paneWidth', (paneWidth) =>
       @css 'width', paneWidth
+
+    # tree-kill does not support SIGINT on Windows
+    @interruptBtn.detach() if isWin
 
     # assigned = false
     #
@@ -65,6 +71,8 @@ class CommandOutputView extends View
     atom.commands.add '.panel.ult-terminal', "core:confirm", => @readLine()
 
   readLine: ->
+    return if this isnt lastOpenedView
+
     inputCmd = @cmdEditor.getModel().getText().trim()
 
     @cliOutput.append "$ #{inputCmd}\n"
@@ -80,6 +88,10 @@ class CommandOutputView extends View
       @cliOutput.empty()
       @message ''
       return @cmdEditor.setText ''
+    if cmd == 'exit'
+      return @destroy()
+    if not cmd
+      return
     @spawn inputCmd
 
   showCmd: ->
@@ -112,9 +124,13 @@ class CommandOutputView extends View
     else
       _destroy()
 
-  kill: ->
+  kill: (signal = 'SIGKILL') ->
     if @program
-      @program.kill()
+      kill @program.pid, signal, (err) ->
+        console.log err if err and atom.config.get('ult-terminal.logConsole')
+
+  interrupt: ->
+    @kill('SIGINT')
 
   open: ->
     @lastLocation = atom.workspace.getActivePane()
@@ -246,9 +262,11 @@ class CommandOutputView extends View
       @statusIcon.classList.remove 'status-success'
       @statusIcon.classList.remove 'status-error'
       @statusIcon.classList.add 'status-running'
+      @interruptBtn.removeClass 'hide'
       @killBtn.removeClass 'hide'
       @program.once 'exit', (code) =>
         console.log 'exit', code if atom.config.get('ult-terminal.logConsole')
+        @interruptBtn.addClass 'hide'
         @killBtn.addClass 'hide'
         @statusIcon.classList.remove 'status-running'
         # @statusIcon.classList.remove 'status-error'
@@ -268,5 +286,5 @@ class CommandOutputView extends View
         @flashIconClass 'status-error', 300
 
     catch err
-      @cliOutput.append err.message
+      @errorMessage err.message
       @showCmd()
