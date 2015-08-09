@@ -68,6 +68,7 @@ class CliStatusView extends View
   # Tear down any state and detach
   destroy: ->
     for index in [@commandViews.length .. 0]
+      commandView.kill() # FIXME doesn't seem to be working
       @removeCommandView @commandViews[index]
     @detach()
 

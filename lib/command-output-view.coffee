@@ -33,11 +33,13 @@ class CommandOutputView extends View
         @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 
   initialize: ->
+    @userHome = process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE
+
     atom.config.observe 'ult-terminal.paneWidth', (paneWidth) =>
       @css 'width', paneWidth
 
-    this.on 'click', '[data-targettype]', ->
-      atom.workspace.open this.dataset.target if this.dataset.targettype is 'file'
+    @on 'click', '[data-targettype]', ->
+      atom.workspace.open @dataset.target if @dataset.targettype is 'file'
 
     # tree-kill does not support SIGINT on Windows
     @interruptBtn.detach() if isWin
@@ -226,12 +228,12 @@ class CommandOutputView extends View
     ["<span class=\"#{classes.join ' '}\" data-targettype=\"#{targetType}\" data-target=\"#{filepath}\">#{filename}</span>", stat, filename]
 
   linkify: (str) ->
-    escapedCwd = @getCwd().split(/\/|\\/g).map((segment) -> segment.replace /\W/g, '\\$&').join '[\\\\\\/]'
-    rFilepath = new RegExp '(' + escapedCwd + ')[\\\\\\/]([^\\s:#$%^&!:]| )+\\.?([^\\s:#$@%&\\*\\^!0-9:\\.+\\-,\\\\\\/\"]| )*', 'ig'
+    escapedCwd = @getCwd().split(/\/|\\/g).map((segment) -> segment.replace /\W/g, '\\$&').join '[\\\\/]'
+    rFilepath = new RegExp escapedCwd + '[\\\\/][^\\n\\r\\t:#$%^&!:<>]+\\.?[^\\n\\r\\t:#$@%&*^!:.+,\\\\/"<>]*', 'ig'
     rInCwd = null
     str.replace rFilepath, (match) =>
       try
-        rInCwd ?= new RegExp '^' + escapedCwd + '[\\\\\\/]', 'i'
+        rInCwd ?= new RegExp '^' + escapedCwd + '[\\\\/]', 'i'
         @_fileInfoHtml(match.replace(rInCwd, ''), @getCwd())[0]
       catch err
         match
@@ -261,7 +263,8 @@ class CommandOutputView extends View
   getCwd: ->
     return @cwd if @cwd?
     editorPath = atom.workspace.getActiveTextEditor()?.getPath()
-    return if not editorPath?
+    if not editorPath?
+      return @cwd = atom.project.rootDirectories[0]?.path ? @userHome
     activeRootDir = null
     @cwd = activeRootDir.path if atom.project.rootDirectories.some (rootDir) ->
       if rootDir.contains(editorPath)
