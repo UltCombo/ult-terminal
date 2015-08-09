@@ -100,15 +100,17 @@ class CommandOutputView extends View
     @timer = setTimeout onStatusOut, time
 
   destroy: ->
-    if @program
-      @program.once 'exit', _destroy
-      @program.kill()
-    else
+    _destroy = =>
       if @hasParent()
         @close()
       if @statusIcon and @statusIcon.parentNode
         @statusIcon.parentNode.removeChild(@statusIcon)
       @statusView.removeCommandView this
+    if @program
+      @program.once 'exit', _destroy
+      @program.kill()
+    else
+      _destroy()
 
   kill: ->
     if @program
