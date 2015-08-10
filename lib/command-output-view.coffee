@@ -261,13 +261,12 @@ class CommandOutputView extends View
   getCwd: ->
     return @cwd if @cwd?
     editorPath = atom.workspace.getActiveTextEditor()?.getPath()
-    if not editorPath?
-      return @cwd = atom.project.rootDirectories[0]?.path ? @userHome
     activeRootDir = null
-    @cwd = activeRootDir.path if atom.project.rootDirectories.some (rootDir) ->
+    return @cwd = activeRootDir.path if editorPath and atom.project.rootDirectories.some (rootDir) ->
       if rootDir.contains(editorPath)
         activeRootDir = rootDir
         true
+    @cwd = atom.project.rootDirectories[0]?.path ? @userHome
 
   spawn: (inputCmd) ->
     @cmdEditor.hide()
