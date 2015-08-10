@@ -1,5 +1,4 @@
 {View} = require 'atom-space-pen-views'
-domify = require 'domify'
 CommandOutputView = require './command-output-view'
 
 module.exports =
@@ -21,7 +20,8 @@ class CliStatusView extends View
       'ult-terminal:destroy': => @destroyActiveTerm()
 
   createCommandView: ->
-    termStatus = domify '<span class="ult-terminal icon icon-terminal"></span>'
+    termStatus = document.createElement 'span'
+    termStatus.className = 'ult-terminal icon icon-terminal'
     commandOutputView = new CommandOutputView
     commandOutputView.statusIcon = termStatus
     commandOutputView.statusView = this
@@ -40,9 +40,9 @@ class CliStatusView extends View
   activeCommandView: (index) ->
     if index >= @commandViews.length
       index = 0
-    if index < 0
+    else if index < 0
       index = @commandViews.length - 1
-    @commandViews[index] and @commandViews[index].open()
+    @commandViews[index]?.open()
 
   setActiveCommandView: (commandView) ->
     @activeIndex = @commandViews.indexOf commandView
