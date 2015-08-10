@@ -11,6 +11,9 @@ lastOpenedView = null
 
 module.exports =
 class CommandOutputView extends View
+  # Regular expression adapted from http://blog.mattheworiordan.com/post/13174566389/url-regular-expression-for-links-with-or-without
+  # Cleaned up invalid/unnecessary escapes, added negative lookahead to not match package@semver as an email address.
+  rUrl: /(?:(?:(?:[A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,.\w]+@(?!\d+\.\d+\.\d+))?[A-Za-z0-9.-]+|(www\.|[-;:&=+$,.\w]+@(?!\d+\.\d+\.\d+))[A-Za-z0-9.-]+)(?:(?:\/[+~%/.\w_-]*)?\??(?:[-+=&;%@.\w]*)#?(?:[.!/\\\w]*))?)/g
   cwd: null
   @content: ->
     @div tabIndex: -1, class: 'panel panel-right ult-terminal', =>
@@ -228,13 +231,19 @@ class CommandOutputView extends View
     ["<span class=\"#{classes.join ' '}\" data-targettype=\"#{targetType}\" data-target=\"#{filepath}\">#{filename}</span>", stat, filename]
 
   linkify: (str) ->
-    escapedCwd = @getCwd().split(/\/|\\/g).map((segment) -> segment.replace /\W/g, '\\$&').join '[\\\\/]'
+    escapedCwd = @getCwd().split(/[\\/]/g).map((segment) -> segment.replace /\W/g, '\\$&').join '[\\\\/]'
     rFilepath = new RegExp escapedCwd + '[\\\\/]([^\\n\\r\\t:#$%^&!:<>]+\\.?[^\\n\\r\\t:#$@%&*^!:.+,\\\\/"<>]*)', 'ig'
     str.replace rFilepath, (match, relativeFilepath) =>
       try
         @_fileInfoHtml(relativeFilepath, @getCwd())[0]
       catch err
         match
+    .replace @rUrl, (match, protocolessBeginning) ->
+      if protocolessBeginning
+        href = (if protocolessBeginning is 'www.' then 'http://' else 'mailto:') + match
+      else
+        href = match
+      "<a href='#{href}'>#{match}</a>"
 
   # getGitStatusName: (path, gitRoot, repo) ->
   #   status = (repo.getCachedPathStatus or repo.getPathStatus)(path)
