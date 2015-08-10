@@ -247,13 +247,13 @@ class CommandOutputView extends View
   #     return 'ignored'
 
   message: (message) ->
-    @cliOutput.append @linkify(if message.endsWith('\n') then message else message + '\n')
+    @cliOutput.append @linkify(if message.endsWith('\n') then message else message + '\n') if message
     @showCmd()
     @statusIcon.classList.remove 'status-error'
     @statusIcon.classList.add 'status-success'
 
   errorMessage: (message) ->
-    @cliOutput.append @linkify(if message.endsWith('\n') then message else message + '\n')
+    @cliOutput.append @linkify(if message.endsWith('\n') then message else message + '\n') if message
     @showCmd()
     @statusIcon.classList.remove 'status-success'
     @statusIcon.classList.add 'status-error'
@@ -272,6 +272,7 @@ class CommandOutputView extends View
     @cmdEditor.hide()
     htmlStream = ansihtml()
     htmlStream.on 'data', (data) =>
+      return if not data
       @cliOutput.append @linkify data
       @scrollToBottom()
     try
