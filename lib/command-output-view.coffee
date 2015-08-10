@@ -89,8 +89,8 @@ class CommandOutputView extends View
       return
     if cmd == 'cd'
       return @cd args
-    if cmd == 'ls'
-      return @ls args
+    if cmd == 'ls' and !args.length
+      return @ls()
     if cmd == 'clear'
       @cliOutput.empty()
       @message ''
@@ -173,7 +173,7 @@ class CommandOutputView extends View
       @cwd = dir
       @message "cwd: #{@cwd}"
 
-  ls: (args) ->
+  ls: () ->
     files = fs.readdirSync @getCwd()
     filesBlocks = []
     files.forEach (filename) =>
