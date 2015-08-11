@@ -6,7 +6,6 @@ fs = require 'fs-plus'
 ansihtml = require 'ansi-html-stream'
 kill = require 'tree-kill'
 
-isWin = process.platform is 'win32'
 lastOpenedView = null
 
 module.exports =
@@ -41,9 +40,6 @@ class CommandOutputView extends View
 
     @on 'click', '[data-targettype]', ->
       atom.workspace.open @dataset.target if @dataset.targettype is 'file'
-
-    # tree-kill does not support SIGINT on Windows
-    @interruptBtn.detach() if isWin
 
     # assigned = false
     #
@@ -139,13 +135,15 @@ class CommandOutputView extends View
     else
       _destroy()
 
-  kill: (signal = 'SIGKILL') ->
+  kill: ->
     if @program
-      kill @program.pid, signal, (err) ->
+      kill @program.pid, 'SIGKILL', (err) ->
         console.log err if err and atom.config.get('ult-terminal.logConsole')
 
   interrupt: ->
-    @kill('SIGINT')
+    if @program
+      # Send the interrupt signal to the root child process only, it should propagate from there.
+      @program.kill 'SIGINT'
 
   open: ->
     @lastLocation = atom.workspace.getActivePane()
