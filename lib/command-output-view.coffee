@@ -119,14 +119,14 @@ class CommandOutputView extends View
     el = @cliOutput[0]
     el.scrollTop + el.offsetHeight is el.scrollHeight
 
-  flashIconClass: (className, time=100) =>
+  flashIconClass: (className, time = 100) =>
     @statusIcon.classList.add className
     @timer and clearTimeout(@timer)
     onStatusOut = =>
       @statusIcon.classList.remove className
     @timer = setTimeout onStatusOut, time
 
-  destroy: ->
+  destroy: (doKill = true) ->
     _destroy = =>
       if @hasParent()
         @close()
@@ -135,7 +135,7 @@ class CommandOutputView extends View
       @statusView.removeCommandView this
     if @program
       @program.once 'exit', _destroy
-      @kill()
+      @kill() if doKill
     else
       _destroy()
 

@@ -66,7 +66,10 @@ class CliStatusView extends View
   # Tear down any state and detach
   destroy: ->
     for index in [@commandViews.length - 1 .. 0] by -1
-      @commandViews[index].destroy()
+      @commandViews[index].destroy false
+    if @commandViews.length
+      pids = (commandView.program.pid for commandView in @commandViews)
+      require('child_process').fork(__dirname + '/kill-all.js', pids).unref()
     @detach()
 
   toggle: ->
