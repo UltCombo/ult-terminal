@@ -1,4 +1,4 @@
-fs = require 'fs'
+fs = require 'fs-plus'
 {resolve} = require 'path'
 {exec} = require 'child_process'
 {TextEditorView} = require 'atom-space-pen-views'
@@ -36,8 +36,6 @@ class CommandOutputView extends View
         @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 
   initialize: ->
-    @userHome = process.env.HOME or process.env.HOMEPATH or process.env.USERPROFILE
-
     atom.config.observe 'ult-terminal.paneWidth', (paneWidth) =>
       @css 'width', paneWidth
 
@@ -83,8 +81,7 @@ class CommandOutputView extends View
 
     inputCmd = @cmdEditor.getModel().getText().trim()
 
-    @cliOutput.append "$ #{inputCmd}\n"
-    @scrollToBottom()
+    @appendOutput "$ #{inputCmd}\n"
     # support 'a b c' and "foo bar"
     args = inputCmd.match(/("[^"]*"|'[^']*'|[^\s'"]+)/g) ? []
     cmd = args.shift()
@@ -102,15 +99,25 @@ class CommandOutputView extends View
       return @destroy()
     @spawn inputCmd
 
+  appendOutput: (output) ->
+    doScroll = @isScrolledToBottom()
+    @cliOutput.append output
+    @scrollToBottom() if doScroll
+
   showCmd: ->
+    doScroll = @isScrolledToBottom()
     @cmdEditor.show()
+    @scrollToBottom() if doScroll
     @cmdEditor.getModel().selectAll()
     @cmdEditor.setText('') if atom.config.get('ult-terminal.clearCommandInput')
     @cmdEditor.focus()
-    @scrollToBottom()
 
   scrollToBottom: ->
-    @cliOutput.scrollTop @cliOutput[0].scrollHeight
+    @cliOutput[0].scrollTop = @cliOutput[0].scrollHeight
+
+  isScrolledToBottom: ->
+    el = @cliOutput[0]
+    el.scrollTop + el.offsetHeight is el.scrollHeight
 
   flashIconClass: (className, time=100) =>
     @statusIcon.classList.add className
@@ -165,7 +172,7 @@ class CommandOutputView extends View
 
   cd: (args) ->
     args = [@getCwd()] if not args[0]
-    dir = resolve @getCwd(), args[0]
+    dir = resolve @getCwd(), fs.normalize args[0]
     fs.stat dir, (err, stat) =>
       if err
         if err.code == 'ENOENT'
@@ -256,13 +263,13 @@ class CommandOutputView extends View
   #     return 'ignored'
 
   message: (message) ->
-    @cliOutput.append @linkify(if message.endsWith('\n') then message else message + '\n') if message
+    @appendOutput @linkify(if message.endsWith('\n') then message else message + '\n') if message
     @showCmd()
     @statusIcon.classList.remove 'status-error'
     @statusIcon.classList.add 'status-success'
 
   errorMessage: (message) ->
-    @cliOutput.append @linkify(if message.endsWith('\n') then message else message + '\n') if message
+    @appendOutput @linkify(if message.endsWith('\n') then message else message + '\n') if message
     @showCmd()
     @statusIcon.classList.remove 'status-success'
     @statusIcon.classList.add 'status-error'
@@ -275,15 +282,14 @@ class CommandOutputView extends View
       if rootDir.contains(editorPath)
         activeRootDir = rootDir
         true
-    @cwd = atom.project.rootDirectories[0]?.path ? @userHome
+    @cwd = atom.project.rootDirectories[0]?.path ? fs.getHomeDirectory()
 
   spawn: (inputCmd) ->
     @cmdEditor.hide()
     htmlStream = ansihtml()
     htmlStream.on 'data', (data) =>
       return if not data
-      @cliOutput.append @linkify data
-      @scrollToBottom()
+      @appendOutput @linkify data
     try
       # @program = spawn cmd, args, stdio: 'pipe', env: process.env, cwd: @getCwd()
       @program = exec inputCmd, stdio: 'pipe', env: process.env, cwd: @getCwd()
@@ -305,7 +311,7 @@ class CommandOutputView extends View
         @showCmd()
       @program.on 'error', (err) =>
         console.log 'error' if atom.config.get('ult-terminal.logConsole')
-        @cliOutput.append err.message
+        @appendOutput err.message
         @showCmd()
         @statusIcon.classList.add 'status-error'
       @program.stdout.on 'data', () =>
