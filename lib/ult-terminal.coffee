@@ -18,11 +18,14 @@ module.exports =
 
   config:
     paneWidth:
+      title: 'Pane width (px)'
       type: 'integer'
       default: 520
     clearCommandInput:
+      title: 'Clear command input after submitting command'
       type: 'boolean'
       default: true
-    logConsole:
+    debug:
+      title: 'Output debugging information to console'
       type: 'boolean'
       default: false

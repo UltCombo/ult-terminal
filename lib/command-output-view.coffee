@@ -139,7 +139,7 @@ class CommandOutputView extends View
   kill: ->
     if @program
       kill @program.pid, 'SIGKILL', (err) ->
-        console.log err if err and atom.config.get('ult-terminal.logConsole')
+        console.log err if err and atom.config.get('ult-terminal.debug')
 
   interrupt: ->
     if @program
@@ -300,7 +300,7 @@ class CommandOutputView extends View
       @interruptBtn.removeClass 'hide'
       @killBtn.removeClass 'hide'
       @program.once 'exit', (code) =>
-        console.log 'exit', code if atom.config.get('ult-terminal.logConsole')
+        console.log 'exit', code if atom.config.get('ult-terminal.debug')
         @interruptBtn.addClass 'hide'
         @killBtn.addClass 'hide'
         @statusIcon.classList.remove 'status-running'
@@ -309,7 +309,7 @@ class CommandOutputView extends View
         @statusIcon.classList.add code == 0 and 'status-success' or 'status-error'
         @showCmd()
       @program.on 'error', (err) =>
-        console.log 'error' if atom.config.get('ult-terminal.logConsole')
+        console.log 'error' if atom.config.get('ult-terminal.debug')
         @appendOutput err.message
         @showCmd()
         @statusIcon.classList.add 'status-error'
@@ -317,7 +317,7 @@ class CommandOutputView extends View
         @flashIconClass 'status-info'
         @statusIcon.classList.remove 'status-error'
       @program.stderr.on 'data', () =>
-        console.log 'stderr' if atom.config.get('ult-terminal.logConsole')
+        console.log 'stderr' if atom.config.get('ult-terminal.debug')
         @flashIconClass 'status-error', 300
 
     catch err
