@@ -5,6 +5,7 @@ fs = require 'fs-plus'
 {View} = require 'atom-space-pen-views'
 ansihtml = require 'ansi-html-stream'
 kill = require 'tree-kill'
+require('fix-path')()
 
 lastOpenedView = null
 
