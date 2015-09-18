@@ -6,7 +6,7 @@ class CliStatusView extends View
   @content: ->
     @div class: 'ult-terminal inline-block', =>
       @span outlet: 'termStatusContainer', =>
-        @span click: 'newTermClick', class: "ult-terminal icon icon-plus"
+        @span click: 'newTermClick', class: 'ult-terminal icon icon-plus'
 
   commandViews: []
   activeIndex: 0
