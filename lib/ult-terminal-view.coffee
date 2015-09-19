@@ -2,7 +2,7 @@
 CommandOutputView = require './command-output-view'
 
 module.exports =
-class CliStatusView extends View
+class UltTerminalView extends View
   @content: ->
     @div class: 'ult-terminal inline-block', =>
       @span outlet: 'termStatusContainer', =>
@@ -18,6 +18,8 @@ class CliStatusView extends View
       'ult-terminal:next': => @activeNextCommandView()
       'ult-terminal:prev': => @activePrevCommandView()
       'ult-terminal:destroy': => @destroyActiveTerm()
+
+     atom.commands.add '.panel.ult-terminal', 'core:confirm', => @runActiveTermCommand()
 
   createCommandView: ->
     termStatus = document.createElement 'span'
@@ -62,6 +64,9 @@ class CliStatusView extends View
 
   destroyActiveTerm: ->
     @commandViews[@activeIndex]?.destroy()
+
+  runActiveTermCommand: ->
+    @commandViews[@activeIndex]?.readLine()
 
   # Tear down any state and detach
   destroy: ->

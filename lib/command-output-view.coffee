@@ -18,21 +18,22 @@ class CommandOutputView extends View
   @content: ->
     @div tabIndex: -1, class: 'panel panel-right ult-terminal', =>
       @div class: 'panel-heading', =>
+        @div class: 'running-process-actions hide', outlet: 'runningProcessActions', =>
+          @div class: 'btn-group pull-left', =>
+            @button click: 'interrupt', class: 'btn', title: 'Send SIGINT to the running process (similar to pressing Ctrl+C in a regular terminal)', =>
+              @span 'Interrupt'
+            @button click: 'kill', class: 'btn', title: 'Send SIGKILL to the entire running process tree', =>
+              @span 'Kill'
+          @span ' running process', class: 'text pull-left'
+
         @div class: 'btn-group', =>
-          @button outlet: 'interruptBtn', click: 'interrupt', class: 'btn hide', =>
-            @span 'interrupt'
-          @button outlet: 'killBtn', click: 'kill', class: 'btn hide', =>
-            # @span class: "icon icon-x"
-            @span 'kill'
-          @button click: 'destroy', class: 'btn', =>
-            # @span class: "icon icon-x"
-            @span 'destroy'
-          @button click: 'close', class: 'btn', =>
-            @span class: "icon icon-x"
-            @span 'close'
+          @button click: 'destroy', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
+            @span 'Quit'
+          @button click: 'close', class: 'btn', title: 'Hide the terminal (Shift+Enter)', =>
+            @span 'Hide'
       @div class: 'cli-panel-body', =>
-        @pre tabIndex: -1, class: "terminal native-key-bindings", outlet: "cliOutput",
-          "Welcome to ult-terminal.\n"
+        @pre tabIndex: -1, class: 'terminal native-key-bindings', outlet: 'cliOutput',
+          'Welcome to ult-terminal.\n'
         @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 
   initialize: ->
@@ -69,9 +70,6 @@ class CommandOutputView extends View
     #             assigned = true
     #           catch
     #             console.log "#{command} couldn't be loaded"
-
-    atom.commands.add 'atom-workspace', "ult-terminal:toggle-output", => @toggle()
-    atom.commands.add '.panel.ult-terminal', "core:confirm", => @readLine()
 
   readLine: ->
     return if this isnt lastOpenedView
@@ -123,6 +121,9 @@ class CommandOutputView extends View
       @statusIcon.classList.remove className
     @timer = setTimeout onStatusOut, time
 
+  # When the `destroy` method is called as an element event handler,
+  # the `doKill` argument will be an event object which is truthy and the method works as expected.
+  # TODO make this more explicit in the code.
   destroy: (doKill = true) ->
     _destroy = =>
       if @hasParent()
@@ -297,12 +298,10 @@ class CommandOutputView extends View
       @statusIcon.classList.remove 'status-success'
       @statusIcon.classList.remove 'status-error'
       @statusIcon.classList.add 'status-running'
-      @interruptBtn.removeClass 'hide'
-      @killBtn.removeClass 'hide'
+      @runningProcessActions.removeClass 'hide'
       @program.once 'exit', (code) =>
         console.log 'exit', code if atom.config.get('ult-terminal.debug')
-        @interruptBtn.addClass 'hide'
-        @killBtn.addClass 'hide'
+        @runningProcessActions.addClass 'hide'
         @statusIcon.classList.remove 'status-running'
         # @statusIcon.classList.remove 'status-error'
         @program = null
