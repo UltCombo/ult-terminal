@@ -31,7 +31,7 @@ class CommandOutputView extends View
             @span class: "icon icon-x"
             @span 'close'
       @div class: 'cli-panel-body', =>
-        @pre class: "terminal", outlet: "cliOutput",
+        @pre tabIndex: -1, class: "terminal native-key-bindings", outlet: "cliOutput",
           "Welcome to ult-terminal.\n"
         @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 

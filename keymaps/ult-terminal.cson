@@ -21,7 +21,3 @@
   'alt-shift-j': 'ult-terminal:next'
   'alt-shift-k': 'ult-terminal:prev'
   'alt-shift-x': 'ult-terminal:destroy'
-
-'.ult-terminal':
-  'cmd-c': 'native!'
-  'ctrl-c': 'native!'
