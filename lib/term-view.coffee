@@ -43,34 +43,6 @@ class TermView extends View
     @on 'click', '[data-targettype]', ->
       atom.workspace.open @dataset.target if @dataset.targettype is 'file'
 
-    # assigned = false
-    #
-    # cmd = [
-    #     [
-    #         'test -e /etc/profile && source /etc/profile',
-    #         'test -e ~/.profile && source ~/.profile',
-    #         [
-    #             'node -pe "JSON.stringify(process.env)"',
-    #             'nodejs -pe "JSON.stringify(process.env)"',
-    #             'iojs -pe "JSON.stringify(process.env)"'
-    #         ].join("||")
-    #     ].join(";"),
-    #     'node -pe "JSON.stringify(process.env)"',
-    #     'nodejs -pe "JSON.stringify(process.env)"',
-    #     'iojs -pe "JSON.stringify(process.env)"'
-    # ]
-    #
-    # for command in cmd
-    #   do(command) ->
-    #     if not assigned
-    #       exec command, (code, stdout, stderr) ->
-    #         if not assigned and not stderr
-    #           try
-    #             process.env = JSON.parse(stdout)
-    #             assigned = true
-    #           catch
-    #             console.log "#{command} couldn't be loaded"
-
   readLine: ->
     return if this isnt lastOpenedView
 
