@@ -3,14 +3,14 @@ fs = require 'fs-plus'
 {exec} = require 'child_process'
 {TextEditorView} = require 'atom-space-pen-views'
 {View} = require 'atom-space-pen-views'
-ansihtml = require 'ansi-html-stream'
+ansihtml = require 'ansi-html-stream' # TODO remove carriage returns from stream?
 kill = require 'tree-kill'
 require('fix-path')()
 
 lastOpenedView = null
 
 module.exports =
-class CommandOutputView extends View
+class TermView extends View
   # Regular expression adapted from http://blog.mattheworiordan.com/post/13174566389/url-regular-expression-for-links-with-or-without
   # Cleaned up invalid/unnecessary escapes, added negative lookahead to not match package@semver as an email address.
   rUrl: /(?:(?:(?:[A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,.\w]+@(?!\d+\.\d+\.\d+))?[A-Za-z0-9.-]+|(www\.|[-;:&=+$,.\w]+@(?!\d+\.\d+\.\d+))[A-Za-z0-9.-]+)(?:(?:\/[+~%/.\w_-]*)?\??(?:[-+=&;%@.\w]*)#?(?:[.!/\\\w]*))?)/g
@@ -130,7 +130,7 @@ class CommandOutputView extends View
         @close()
       if @statusIcon and @statusIcon.parentNode
         @statusIcon.parentNode.removeChild(@statusIcon)
-      @statusView.removeCommandView this
+      @statusView.removeTermView this
     if @program
       @program.once 'exit', _destroy
       @kill() if doKill
@@ -156,7 +156,7 @@ class CommandOutputView extends View
       lastOpenedView.close()
     lastOpenedView = this
     @scrollToBottom()
-    @statusView.setActiveCommandView this
+    @statusView.setActiveTermView this
     @cmdEditor.focus()
 
   close: ->

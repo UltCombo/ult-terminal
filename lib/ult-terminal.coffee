@@ -1,20 +1,20 @@
-UltTerminalView = require './ult-terminal-view'
+StatusView = require './status-view'
 
 module.exports =
-  cliStatusView: null
+  statusView: null
 
-  activate: (state) ->
+  activate: ->
     cb = =>
-      @cliStatusView ?= new UltTerminalView(state.cliStatusViewState)
-      @cliStatusView.createCommandView()
-      @cliStatusView.attach()
+      @statusView ?= new StatusView
+      @statusView.createTermView()
+      @statusView.attach()
     if atom.packages.isPackageActive 'status-bar'
       cb()
     else
       atom.packages.onDidActivateInitialPackages cb
 
   deactivate: ->
-    @cliStatusView.destroy()
+    @statusView.destroy()
 
   config:
     paneWidth:
