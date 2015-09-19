@@ -13,7 +13,7 @@ module.exports =
 class TermView extends View
   # Regular expression adapted from http://blog.mattheworiordan.com/post/13174566389/url-regular-expression-for-links-with-or-without
   # Cleaned up invalid/unnecessary escapes, added negative lookahead to not match package@semver as an email address.
-  rUrl: /(?:(?:(?:[A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,.\w]+@(?!\d+\.\d+\.\d+))?[A-Za-z0-9.-]+|(www\.|[-;:&=+$,.\w]+@(?!\d+\.\d+\.\d+))[A-Za-z0-9.-]+)(?:(?:\/[+~%/.\w_-]*)?\??(?:[-+=&;%@.\w]*)#?(?:[.!/\\\w]*))?)/g
+  rUrl: /(?:(?:(?:[A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,.\w]+@(?!\d+\b))?[A-Za-z0-9.-]+|(www\.|[-;:&=+$,.\w]+@(?!\d+\b))[A-Za-z0-9.-]+)(?:(?:\/[+~%/.\w_-]*)?\??(?:[-+=&;%@.\w]*)#?(?:[.!/\\\w]*))?)/g
   cwd: null
   @content: ->
     @div tabIndex: -1, class: 'panel panel-right ult-terminal', =>
