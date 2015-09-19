@@ -4,9 +4,9 @@ CommandOutputView = require './command-output-view'
 module.exports =
 class UltTerminalView extends View
   @content: ->
-    @div class: 'ult-terminal inline-block', =>
+    @div class: 'ult-terminal-status inline-block', =>
       @span outlet: 'termStatusContainer', =>
-        @span click: 'newTermClick', class: 'ult-terminal icon icon-plus'
+        @span click: 'newTermClick', class: 'icon icon-plus'
 
   commandViews: []
   activeIndex: 0
@@ -23,7 +23,7 @@ class UltTerminalView extends View
 
   createCommandView: ->
     termStatus = document.createElement 'span'
-    termStatus.className = 'ult-terminal icon icon-terminal'
+    termStatus.className = 'icon icon-terminal'
     commandOutputView = new CommandOutputView
     commandOutputView.statusIcon = termStatus
     commandOutputView.statusView = this

@@ -24,7 +24,7 @@ class CommandOutputView extends View
               @span 'Interrupt'
             @button click: 'kill', class: 'btn', title: 'Send SIGKILL to the entire running process tree', =>
               @span 'Kill'
-          @span ' running process', class: 'text pull-left'
+          @span ' running process', class: 'ult-terminal-heading-text pull-left'
 
         @div class: 'btn-group', =>
           @button click: 'destroy', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
