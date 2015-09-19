@@ -3,7 +3,7 @@ fs = require 'fs-plus'
 {exec} = require 'child_process'
 {TextEditorView} = require 'atom-space-pen-views'
 {View} = require 'atom-space-pen-views'
-ansihtml = require 'ansi-html-stream' # TODO remove carriage returns from stream?
+ansihtml = require 'ansi-html-stream'
 kill = require 'tree-kill'
 require('fix-path')()
 
@@ -27,7 +27,7 @@ class TermView extends View
           @span ' running process', class: 'ult-terminal-heading-text pull-left'
 
         @div class: 'btn-group', =>
-          @button click: 'destroy', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
+          @button click: 'quit', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
             @span 'Quit'
           @button click: 'close', class: 'btn', title: 'Hide the terminal (Shift+Enter)', =>
             @span 'Hide'
@@ -93,9 +93,6 @@ class TermView extends View
       @statusIcon.classList.remove className
     @timer = setTimeout onStatusOut, time
 
-  # When the `destroy` method is called as an element event handler,
-  # the `doKill` argument will be an event object which is truthy and the method works as expected.
-  # TODO make this more explicit in the code.
   destroy: (doKill = true) ->
     _destroy = =>
       if @hasParent()
@@ -108,6 +105,9 @@ class TermView extends View
       @kill() if doKill
     else
       _destroy()
+
+  quit: ->
+    @destroy()
 
   kill: ->
     if @program
@@ -143,16 +143,16 @@ class TermView extends View
       @open()
 
   cd: (args) ->
-    args = [@getCwd()] if not args[0]
-    dir = resolve @getCwd(), fs.normalize args[0]
-    fs.stat dir, (err, stat) =>
+    dir = args[0] ? @getCwd()
+    resolvedDir = resolve @getCwd(), fs.normalize dir
+    fs.stat resolvedDir, (err, stat) =>
       if err
         if err.code == 'ENOENT'
-          return @errorMessage "cd: #{args[0]}: No such file or directory"
+          return @errorMessage "cd: #{dir}: No such file or directory"
         return @errorMessage err.message
       if not stat.isDirectory()
-        return @errorMessage "cd: not a directory: #{args[0]}"
-      @cwd = dir
+        return @errorMessage "cd: not a directory: #{dir}"
+      @cwd = resolvedDir
       @message "cwd: #{@cwd}"
 
   ls: () ->
