@@ -58,7 +58,7 @@ class StatusView extends View
     @createTermView().toggle()
 
   attach: (statusBar) ->
-    statusBar = document.querySelector("status-bar")
+    statusBar = document.querySelector('status-bar')
     if statusBar?
       @statusBarTile = statusBar.addLeftTile(item: this, priority: 100)
 
