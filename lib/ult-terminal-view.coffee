@@ -29,7 +29,7 @@ class CliStatusView extends View
     termStatus.addEventListener 'click', ->
       commandOutputView.toggle()
     @termStatusContainer.append termStatus
-    return commandOutputView
+    commandOutputView
 
   activeNextCommandView: ->
     @activeCommandView @activeIndex + 1
