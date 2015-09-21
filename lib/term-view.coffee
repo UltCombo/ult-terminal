@@ -26,6 +26,8 @@ class TermView extends View
           @span ' running process', class: 'ult-terminal-heading-text pull-left'
 
         @div class: 'btn-group', =>
+          @button click: 'clearOutput', class: 'btn', title: 'Clear the terminal output', =>
+            @span 'Clear'
           @button click: 'quit', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
             @span 'Quit'
           @button click: 'close', class: 'btn', title: 'Hide the terminal (Shift+Enter)', =>
@@ -60,9 +62,7 @@ class TermView extends View
     if cmd == 'ls' and !args.length
       return @ls()
     if cmd == 'clear'
-      @cliOutput.empty()
-      @message ''
-      return @cmdEditor.setText ''
+      return @clear()
     if cmd == 'exit'
       return @destroy()
     @spawn inputCmd
@@ -158,7 +158,7 @@ class TermView extends View
       @cwd = resolvedDir
       @message "cwd: #{@cwd}"
 
-  ls: () ->
+  ls: ->
     files = fs.readdirSync @getCwd()
     filesBlocks = []
     files.forEach (filename) =>
@@ -177,6 +177,15 @@ class TermView extends View
     filesBlocks = filesBlocks.map (b) ->
       b[0]
     @message filesBlocks.join('') + '<div class="clear"/>'
+
+  clear: ->
+    @clearOutput()
+    @message ''
+    @cmdEditor.setText ''
+
+  # Used by the "Clear" button and the `clear` command
+  clearOutput: ->
+    @cliOutput.empty()
 
   _fileInfoHtml: (filename, parent, extraClasses = []) ->
     classes = ['icon'].concat extraClasses
