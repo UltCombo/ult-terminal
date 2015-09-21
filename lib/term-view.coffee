@@ -1,20 +1,19 @@
 fs = require 'fs-plus'
 {resolve} = require 'path'
 {exec} = require 'child_process'
-{TextEditorView} = require 'atom-space-pen-views'
-{View} = require 'atom-space-pen-views'
+{View, TextEditorView} = require 'atom-space-pen-views'
 ansihtml = require 'ansi-html-stream'
 kill = require 'tree-kill'
 require('fix-path')()
 
 lastOpenedView = null
 
+# Regular expression adapted from http://blog.mattheworiordan.com/post/13174566389/url-regular-expression-for-links-with-or-without
+# Cleaned up invalid/unnecessary escapes, added negative lookahead to not match package@semver as an email address.
+rUrl = /(?:(?:(?:[A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,.\w]+@(?!\d+\b))?[A-Za-z0-9.-]+|(www\.|[-;:&=+$,.\w]+@(?!\d+\b))[A-Za-z0-9.-]+)(?:(?:\/[+~%/.\w_-]*)?\??(?:[-+=&;%@.\w]*)#?(?:[.!/\\\w]*))?)/g
+
 module.exports =
 class TermView extends View
-  # Regular expression adapted from http://blog.mattheworiordan.com/post/13174566389/url-regular-expression-for-links-with-or-without
-  # Cleaned up invalid/unnecessary escapes, added negative lookahead to not match package@semver as an email address.
-  rUrl: /(?:(?:(?:[A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=+$,.\w]+@(?!\d+\b))?[A-Za-z0-9.-]+|(www\.|[-;:&=+$,.\w]+@(?!\d+\b))[A-Za-z0-9.-]+)(?:(?:\/[+~%/.\w_-]*)?\??(?:[-+=&;%@.\w]*)#?(?:[.!/\\\w]*))?)/g
-  cwd: null
   @content: ->
     @div tabIndex: -1, class: 'panel panel-right ult-terminal', =>
       @div class: 'panel-heading', =>
@@ -37,6 +36,8 @@ class TermView extends View
         @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 
   initialize: ->
+    @cwd = null
+
     atom.config.observe 'ult-terminal.paneWidth', (paneWidth) =>
       @css 'width', paneWidth
 
@@ -75,8 +76,10 @@ class TermView extends View
     doScroll = @isScrolledToBottom()
     @cmdEditor.show()
     @scrollToBottom() if doScroll
-    @cmdEditor.getModel().selectAll()
-    @cmdEditor.setText('') if atom.config.get('ult-terminal.clearCommandInput')
+    if atom.config.get('ult-terminal.clearCommandInput')
+      @cmdEditor.setText('')
+    else
+      @cmdEditor.getModel().selectAll()
     @cmdEditor.focus()
 
   scrollToBottom: ->
@@ -86,19 +89,19 @@ class TermView extends View
     el = @cliOutput[0]
     el.scrollTop + el.offsetHeight is el.scrollHeight
 
-  flashIconClass: (className, time = 100) =>
+  flashStatusIconClass: (className, time = 100) ->
     @statusIcon.classList.add className
-    @timer and clearTimeout(@timer)
-    onStatusOut = =>
-      @statusIcon.classList.remove className
-    @timer = setTimeout onStatusOut, time
+    clearTimeout @statusIconFlashTimeout if @statusIconFlashTimeout
+    @statusIconFlashTimeout = setTimeout (=> @statusIcon.classList.remove className), time
+
+  resetStatusIcon: ->
+    clearTimeout @statusIconFlashTimeout if @statusIconFlashTimeout
+    @statusIcon.classList.remove 'status-running', 'status-info', 'status-success', 'status-error'
 
   destroy: (doKill = true) ->
     _destroy = =>
-      if @hasParent()
-        @close()
-      if @statusIcon and @statusIcon.parentNode
-        @statusIcon.parentNode.removeChild(@statusIcon)
+      @close() if @hasParent()
+      @statusIcon.parentNode.removeChild @statusIcon if @statusIcon and @statusIcon.parentNode
       @statusView.removeTermView this
     if @program
       @program.once 'exit', _destroy
@@ -217,9 +220,9 @@ class TermView extends View
         @_fileInfoHtml(relativeFilepath, @getCwd())[0]
       catch err
         match
-    .replace @rUrl, (match, protocolessBeginning) ->
-      if protocolessBeginning
-        href = (if protocolessBeginning is 'www.' then 'http://' else 'mailto:') + match
+    .replace rUrl, (match, protocolLessBeginning) ->
+      if protocolLessBeginning
+        href = (if protocolLessBeginning is 'www.' then 'http://' else 'mailto:') + match
       else
         href = match
       "<a href='#{href}'>#{match}</a>"
@@ -267,29 +270,27 @@ class TermView extends View
       @program = exec inputCmd, stdio: 'pipe', env: process.env, cwd: @getCwd()
       @program.stdout.pipe htmlStream
       @program.stderr.pipe htmlStream
-      @statusIcon.classList.remove 'status-success'
-      @statusIcon.classList.remove 'status-error'
+      @resetStatusIcon()
       @statusIcon.classList.add 'status-running'
       @runningProcessActions.removeClass 'hide'
       @program.once 'exit', (code) =>
         console.log 'exit', code if atom.config.get('ult-terminal.debug')
-        @runningProcessActions.addClass 'hide'
-        @statusIcon.classList.remove 'status-running'
-        # @statusIcon.classList.remove 'status-error'
         @program = null
-        @statusIcon.classList.add code == 0 and 'status-success' or 'status-error'
+        @resetStatusIcon()
+        @statusIcon.classList.add (if code == 0 then 'status-success' else 'status-error')
+        @runningProcessActions.addClass 'hide'
         @showCmd()
       @program.on 'error', (err) =>
-        console.log 'error' if atom.config.get('ult-terminal.debug')
+        console.log 'error', err if atom.config.get('ult-terminal.debug')
         @appendOutput err.message
-        @showCmd()
         @statusIcon.classList.add 'status-error'
-      @program.stdout.on 'data', () =>
-        @flashIconClass 'status-info'
+        @showCmd()
+      @program.stdout.on 'data', =>
         @statusIcon.classList.remove 'status-error'
-      @program.stderr.on 'data', () =>
+        @flashStatusIconClass 'status-info'
+      @program.stderr.on 'data', =>
         console.log 'stderr' if atom.config.get('ult-terminal.debug')
-        @flashIconClass 'status-error', 300
+        @statusIcon.classList.add 'status-error'
 
     catch err
       @errorMessage err.message

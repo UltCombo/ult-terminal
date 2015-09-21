@@ -8,9 +8,9 @@ class StatusView extends View
       @span outlet: 'termStatusContainer', =>
         @span click: 'onNewTerm', class: 'icon icon-plus'
 
-  termViews: []
-  activeIndex: 0
   initialize: ->
+    @termViews = []
+    @activeIndex = 0
 
     atom.commands.add 'atom-workspace',
       'ult-terminal:new': => @onNewTerm()
@@ -19,7 +19,7 @@ class StatusView extends View
       'ult-terminal:prev': => @activatePrevTermView()
       'ult-terminal:destroy': => @destroyActiveTerm()
 
-     atom.commands.add '.panel.ult-terminal', 'core:confirm', => @runActiveTermCommand()
+    atom.commands.add '.panel.ult-terminal', 'core:confirm', => @runActiveTermCommand()
 
   createTermView: ->
     termStatus = document.createElement 'span'
