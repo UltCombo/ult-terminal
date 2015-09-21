@@ -260,38 +260,37 @@ class TermView extends View
     @cwd = atom.project.rootDirectories[0]?.path ? fs.getHomeDirectory()
 
   spawn: (inputCmd) ->
+    # @program = spawn cmd, args, stdio: 'pipe', env: process.env, cwd: @getCwd()
+    @program = exec inputCmd, stdio: 'pipe', env: process.env, cwd: @getCwd()
+    @resetStatusIcon()
+    @statusIcon.classList.add 'status-running'
+    @runningProcessActions.removeClass 'hide'
     @cmdEditor.hide()
+
+    onExit = (statusIconClass) =>
+      onExit = -> # noop
+      @program = null
+      @resetStatusIcon()
+      @statusIcon.classList.add statusIconClass
+      @runningProcessActions.addClass 'hide'
+      @showCmd()
+
     htmlStream = ansihtml()
     htmlStream.on 'data', (data) =>
       return if not data
       @appendOutput @linkify data
-    try
-      # @program = spawn cmd, args, stdio: 'pipe', env: process.env, cwd: @getCwd()
-      @program = exec inputCmd, stdio: 'pipe', env: process.env, cwd: @getCwd()
-      @program.stdout.pipe htmlStream
-      @program.stderr.pipe htmlStream
-      @resetStatusIcon()
-      @statusIcon.classList.add 'status-running'
-      @runningProcessActions.removeClass 'hide'
-      @program.once 'exit', (code) =>
-        console.log 'exit', code if atom.config.get('ult-terminal.debug')
-        @program = null
-        @resetStatusIcon()
-        @statusIcon.classList.add (if code == 0 then 'status-success' else 'status-error')
-        @runningProcessActions.addClass 'hide'
-        @showCmd()
-      @program.on 'error', (err) =>
-        console.log 'error', err if atom.config.get('ult-terminal.debug')
-        @appendOutput err.message
-        @statusIcon.classList.add 'status-error'
-        @showCmd()
-      @program.stdout.on 'data', =>
-        @statusIcon.classList.remove 'status-error'
-        @flashStatusIconClass 'status-info'
-      @program.stderr.on 'data', =>
-        console.log 'stderr' if atom.config.get('ult-terminal.debug')
-        @statusIcon.classList.add 'status-error'
+    @program.stdout.pipe htmlStream
+    @program.stderr.pipe htmlStream
 
-    catch err
-      @errorMessage err.message
-      @showCmd()
+    @program.on 'exit', (code) =>
+      console.log 'exit', code if atom.config.get('ult-terminal.debug')
+      onExit(if code == 0 then 'status-success' else 'status-error')
+    @program.on 'error', (err) =>
+      console.log 'error', err if atom.config.get('ult-terminal.debug')
+      onExit 'status-error'
+    @program.stdout.on 'data', =>
+      @statusIcon.classList.remove 'status-error'
+      @flashStatusIconClass 'status-info'
+    @program.stderr.on 'data', =>
+      console.log 'stderr' if atom.config.get('ult-terminal.debug')
+      @statusIcon.classList.add 'status-error'
