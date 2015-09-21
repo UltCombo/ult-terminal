@@ -31,7 +31,7 @@ class TermView extends View
             @span 'Clear'
           @button click: 'close', class: 'btn', title: 'Hide the terminal (Shift+Enter)', =>
             @span 'Hide'
-          @button click: 'quit', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
+          @button click: 'destroy', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
             @span 'Quit'
       @div class: 'cli-panel-body', =>
         @pre tabIndex: -1, class: 'terminal native-key-bindings', outlet: 'cliOutput',
@@ -116,9 +116,6 @@ class TermView extends View
       @kill()
     else
       _destroy()
-
-  quit: ->
-    @destroy()
 
   kill: ->
     if @program
