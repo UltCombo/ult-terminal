@@ -133,7 +133,7 @@ class TermView extends View
   open: ->
     @lastLocation = atom.workspace.getActivePane()
 
-    atom.workspace.addRightPanel(item: this) unless @hasParent()
+    @pane = atom.workspace.addRightPanel(item: this) unless @hasParent()
 
     if lastOpenedView and lastOpenedView != this
       lastOpenedView.close()
@@ -145,6 +145,7 @@ class TermView extends View
   close: ->
     @lastLocation.activate()
     @detach()
+    @pane?.destroy()
     lastOpenedView = null
 
   toggle: ->
