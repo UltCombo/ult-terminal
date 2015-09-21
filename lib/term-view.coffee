@@ -29,10 +29,10 @@ class TermView extends View
         @div class: 'btn-group', =>
           @button click: 'clearOutput', class: 'btn', title: 'Clear the terminal output', =>
             @span 'Clear'
-          @button click: 'quit', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
-            @span 'Quit'
           @button click: 'close', class: 'btn', title: 'Hide the terminal (Shift+Enter)', =>
             @span 'Hide'
+          @button click: 'quit', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
+            @span 'Quit'
       @div class: 'cli-panel-body', =>
         @pre tabIndex: -1, class: 'terminal native-key-bindings', outlet: 'cliOutput',
           'Welcome to ult-terminal.\n'
