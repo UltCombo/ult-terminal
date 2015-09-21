@@ -132,11 +132,9 @@ class TermView extends View
 
   open: ->
     @lastLocation = atom.workspace.getActivePane()
-
     @pane = atom.workspace.addRightPanel(item: this) unless @hasParent()
 
-    if lastOpenedView and lastOpenedView != this
-      lastOpenedView.close()
+    lastOpenedView.close() if lastOpenedView and lastOpenedView != this
     lastOpenedView = this
     @scrollToBottom()
     @statusView.setActiveTermView this

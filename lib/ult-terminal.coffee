@@ -13,6 +13,7 @@ module.exports =
 
   deactivate: ->
     @statusView.destroy()
+    @statusView = null
 
   config:
     paneWidth:
