@@ -69,10 +69,7 @@ class StatusView extends View
   # Tear down any state and remove
   destroy: ->
     for index in [@termViews.length - 1 .. 0] by -1
-      @termViews[index].destroy false
-    if @termViews.length
-      pids = (termView.program.pid for termView in @termViews)
-      require('child_process').fork(__dirname + '/kill-all.js', pids).unref()
+      @termViews[index].destroy()
     @remove()
     @subs.dispose()
 

@@ -105,7 +105,7 @@ class TermView extends View
     clearTimeout @statusIconFlashTimeout if @statusIconFlashTimeout
     @statusIcon.classList.remove 'status-running', 'status-info', 'status-success', 'status-error'
 
-  destroy: (doKill = true) ->
+  destroy: ->
     _destroy = =>
       @close() if @hasParent()
       @statusIcon.parentNode.removeChild @statusIcon
@@ -113,7 +113,7 @@ class TermView extends View
       @subs.dispose()
     if @program
       @program.once 'exit', _destroy
-      @kill() if doKill
+      @kill()
     else
       _destroy()
 
