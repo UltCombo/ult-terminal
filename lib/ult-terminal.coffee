@@ -1,17 +1,15 @@
 StatusView = require './status-view'
 
 module.exports =
-  statusView: null
-
   activate: ->
+    @statusView = new StatusView
     cb = =>
-      @statusView ?= new StatusView
       @statusView.createTermView()
       @statusView.attach()
     if atom.packages.isPackageActive 'status-bar'
       cb()
     else
-      atom.packages.onDidActivateInitialPackages cb
+      @statusView.subs.add atom.packages.onDidActivateInitialPackages cb
 
   deactivate: ->
     @statusView.destroy()

@@ -2,6 +2,7 @@ fs = require 'fs-plus'
 {resolve} = require 'path'
 {exec} = require 'child_process'
 {View, TextEditorView} = require 'atom-space-pen-views'
+SubAtom = require 'sub-atom'
 ansihtml = require 'ansi-html-stream'
 kill = require 'tree-kill'
 require('fix-path')()
@@ -37,13 +38,19 @@ class TermView extends View
           'Welcome to ult-terminal.\n'
         @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 
-  initialize: ->
+  initialize: (statusIcon, statusView) ->
+    @statusIcon = statusIcon
+    @statusView = statusView
     @cwd = null
+    @subs = new SubAtom
 
-    atom.config.observe 'ult-terminal.paneWidth', (paneWidth) =>
+    @subs.add @statusIcon, 'click', =>
+      @toggle()
+
+    @subs.add atom.config.observe 'ult-terminal.paneWidth', (paneWidth) =>
       @css 'width', paneWidth
 
-    @on 'click', '[data-targettype]', ->
+    @subs.add this, 'click', '[data-targettype]', ->
       atom.workspace.open @dataset.target if @dataset.targettype is 'file'
 
   readLine: ->
@@ -101,8 +108,9 @@ class TermView extends View
   destroy: (doKill = true) ->
     _destroy = =>
       @close() if @hasParent()
-      @statusIcon.parentNode.removeChild @statusIcon if @statusIcon and @statusIcon.parentNode
+      @statusIcon.parentNode.removeChild @statusIcon
       @statusView.removeTermView this
+      @subs.dispose()
     if @program
       @program.once 'exit', _destroy
       @kill() if doKill
