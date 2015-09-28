@@ -66,9 +66,11 @@ class TermView extends View
       return
     if cmd == 'cd'
       return @cd args
+    if cmd == 'pwd'
+      return @pwd()
     if cmd == 'ls' and !args.length
       return @ls()
-    if cmd == 'clear'
+    if cmd in ['clear', 'cls']
       return @clear()
     if cmd == 'exit'
       return @destroy()
@@ -160,7 +162,10 @@ class TermView extends View
       if not stat.isDirectory()
         return @errorMessage "cd: not a directory: #{dir}"
       @cwd = resolvedDir
-      @message "cwd: #{@cwd}"
+      @message @cwd
+
+  pwd: ->
+    @message @cwd
 
   ls: ->
     files = fs.readdirSync @getCwd()
