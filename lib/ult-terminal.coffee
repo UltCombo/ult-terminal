@@ -1,8 +1,8 @@
 StatusView = require './status-view'
 
 module.exports =
-  activate: ->
-    @statusView = new StatusView
+  activate: (state) ->
+    @statusView = new StatusView state
     cb = =>
       @statusView.createTermView()
       @statusView.attach()
@@ -10,6 +10,9 @@ module.exports =
       cb()
     else
       @statusView.subs.add atom.packages.onDidActivateInitialPackages cb
+
+  serialize: ->
+    return @statusView.state
 
   deactivate: ->
     @statusView.destroy()
@@ -28,3 +31,8 @@ module.exports =
       title: 'Output debugging information to console'
       type: 'boolean'
       default: false
+    commandHistorySize:
+      title: 'Command history size'
+      description: 'Note that each project has its own command history.'
+      type: 'integer'
+      default: 500

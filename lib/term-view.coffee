@@ -38,9 +38,12 @@ class TermView extends View
           'Welcome to ult-terminal.\n'
         @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 
-  initialize: (statusIcon, statusView) ->
+  initialize: (statusIcon, statusView, commandHistory) ->
     @statusIcon = statusIcon
     @statusView = statusView
+    @commandHistory = commandHistory
+    @commandHistoryIndex = null
+    @commandHistorySearchBuffer = null
     @cwd = null
     @subs = new SubAtom
 
@@ -53,17 +56,40 @@ class TermView extends View
     @subs.add this, 'click', '[data-targettype]', ->
       atom.workspace.open @dataset.target if @dataset.targettype is 'file'
 
-  readLine: ->
-    return if this isnt lastOpenedView
+    @subs.add @cmdEditor, 'keydown', (event) =>
+      return unless direction = { 38: -1, 40: 1 }[event.keyCode]
+      event.preventDefault()
+      event.stopPropagation()
 
-    inputCmd = @cmdEditor.getModel().getText().trim()
+      @commandHistorySearchBuffer = @cmdEditor.getModel().getText() if not @commandHistoryIndex?
+
+      predicate = (idx) =>
+        command = @commandHistory[idx]
+        if command.startsWith @commandHistorySearchBuffer
+          @cmdEditor.getModel().setText command
+          @commandHistoryIndex = idx
+          true
+
+      if direction < 0
+        (break if predicate idx) for idx in [(@commandHistoryIndex ? @commandHistory.length) - 1..0] by -1
+        undefined # prevent syntax error
+      else
+        (break if found = predicate idx) for idx in [@commandHistoryIndex + 1...@commandHistory.length] by 1 if @commandHistoryIndex?
+        if not found
+          @cmdEditor.getModel().setText @commandHistorySearchBuffer
+          @commandHistoryIndex = null
+
+  readLine: ->
+    inputCmd = @cmdEditor.getModel().getText()
 
     @appendOutput "$ #{inputCmd}\n"
     # support 'a b c' and "foo bar"
     args = inputCmd.match(/("[^"]*"|'[^']*'|[^\s'"]+)/g) ? []
     cmd = args.shift()
-    if not cmd
-      return
+    return @showCmd() if not cmd
+
+    @addCommandHistoryEntry inputCmd
+
     if cmd == 'cd'
       return @cd args
     if cmd == 'pwd'
@@ -85,11 +111,12 @@ class TermView extends View
     doScroll = @isScrolledToBottom()
     @cmdEditor.show()
     @scrollToBottom() if doScroll
-    if atom.config.get('ult-terminal.clearCommandInput')
-      @cmdEditor.setText('')
+    if atom.config.get 'ult-terminal.clearCommandInput'
+      @cmdEditor.setText ''
     else
       @cmdEditor.getModel().selectAll()
     @cmdEditor.focus()
+    @commandHistoryIndex = null
 
   scrollToBottom: ->
     @cliOutput[0].scrollTop = @cliOutput[0].scrollHeight
@@ -157,15 +184,15 @@ class TermView extends View
     fs.stat resolvedDir, (err, stat) =>
       if err
         if err.code == 'ENOENT'
-          return @errorMessage "cd: #{dir}: No such file or directory"
-        return @errorMessage err.message
+          return @message "cd: #{dir}: No such file or directory", true
+        return @message err.message, true
       if not stat.isDirectory()
-        return @errorMessage "cd: not a directory: #{dir}"
+        return @message "cd: not a directory: #{dir}", true
       @cwd = resolvedDir
-      @message @cwd
+      @message @getCwd()
 
   pwd: ->
-    @message @cwd
+    @message @getCwd()
 
   ls: ->
     files = fs.readdirSync @getCwd()
@@ -175,22 +202,21 @@ class TermView extends View
         filesBlocks.push @_fileInfoHtml filename, @getCwd(), ['file-info']
       catch
         console.log "#{filename} couln't be read"
-    filesBlocks = filesBlocks.sort (a, b)->
+    filesBlocks = filesBlocks.sort (a, b) ->
       aDir = a[1].isDirectory()
       bDir = b[1].isDirectory()
       if aDir and not bDir
         return -1
       if not aDir and bDir
         return 1
-      a[2] > b[2] and 1 or -1
+      if a[2] > b[2] then 1 else -1
     filesBlocks = filesBlocks.map (b) ->
       b[0]
-    @message filesBlocks.join('') + '<div class="clear"/>'
+    @message filesBlocks.join('') + '<div class="clear"></div>'
 
   clear: ->
     @clearOutput()
     @message ''
-    @cmdEditor.setText ''
 
   # Used by the "Clear" button and the `clear` command
   clearOutput: ->
@@ -255,17 +281,11 @@ class TermView extends View
   #   if repo.isPathIgnore path
   #     return 'ignored'
 
-  message: (message) ->
+  message: (message, isError = false) ->
     @appendOutput @linkify(if message.endsWith('\n') then message else message + '\n') if message
     @showCmd()
-    @statusIcon.classList.remove 'status-error'
-    @statusIcon.classList.add 'status-success'
-
-  errorMessage: (message) ->
-    @appendOutput @linkify(if message.endsWith('\n') then message else message + '\n') if message
-    @showCmd()
-    @statusIcon.classList.remove 'status-success'
-    @statusIcon.classList.add 'status-error'
+    @resetStatusIcon()
+    @statusIcon.classList.add(if isError then 'status-error' else 'status-success')
 
   getCwd: ->
     return @cwd if @cwd?
@@ -301,14 +321,21 @@ class TermView extends View
     @program.stderr.pipe htmlStream
 
     @program.on 'exit', (code) =>
-      console.log 'exit', code if atom.config.get('ult-terminal.debug')
+      console.log 'exit', code if atom.config.get 'ult-terminal.debug'
       onExit(if code == 0 then 'status-success' else 'status-error')
     @program.on 'error', (err) =>
-      console.log 'error', err if atom.config.get('ult-terminal.debug')
+      console.log 'error', err if atom.config.get 'ult-terminal.debug'
       onExit 'status-error'
     @program.stdout.on 'data', =>
       @statusIcon.classList.remove 'status-error'
       @flashStatusIconClass 'status-info'
     @program.stderr.on 'data', =>
-      console.log 'stderr' if atom.config.get('ult-terminal.debug')
+      console.log 'stderr' if atom.config.get 'ult-terminal.debug'
       @statusIcon.classList.add 'status-error'
+
+  addCommandHistoryEntry: (command) ->
+    return if command[0] == ' '
+    limit = atom.config.get 'ult-terminal.commandHistorySize'
+    for commandHistory in [@commandHistory, @statusView.state.commandHistory]
+      commandHistory.push command if commandHistory[commandHistory.length - 1] != command
+      commandHistory.splice 0, commandHistory.length - limit if commandHistory.length > limit

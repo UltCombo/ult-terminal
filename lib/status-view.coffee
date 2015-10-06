@@ -9,7 +9,9 @@ class StatusView extends View
       @span outlet: 'termStatusContainer', =>
         @span click: 'onNewTerm', class: 'icon icon-plus'
 
-  initialize: ->
+  initialize: (state) ->
+    @state = state ? {}
+    @state.commandHistory ?= []
     @termViews = []
     @activeIndex = 0
     @subs = new SubAtom
@@ -26,7 +28,7 @@ class StatusView extends View
   createTermView: ->
     statusIcon = document.createElement 'span'
     statusIcon.className = 'icon icon-terminal'
-    termView = new TermView statusIcon, this
+    termView = new TermView statusIcon, this, @state.commandHistory.slice 0
     @termViews.push termView
     @termStatusContainer.append statusIcon
     termView
