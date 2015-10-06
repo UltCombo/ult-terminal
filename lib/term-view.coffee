@@ -72,7 +72,7 @@ class TermView extends View
 
       if direction < 0
         (break if predicate idx) for idx in [(@commandHistoryIndex ? @commandHistory.length) - 1..0] by -1
-        undefined # prevent syntax error
+        null # prevent syntax error
       else
         (break if found = predicate idx) for idx in [@commandHistoryIndex + 1...@commandHistory.length] by 1 if @commandHistoryIndex?
         if not found
@@ -337,5 +337,6 @@ class TermView extends View
     return if command[0] == ' '
     limit = atom.config.get 'ult-terminal.commandHistorySize'
     for commandHistory in [@commandHistory, @statusView.state.commandHistory]
-      commandHistory.push command if commandHistory[commandHistory.length - 1] != command
-      commandHistory.splice 0, commandHistory.length - limit if commandHistory.length > limit
+      commandHistory.push command if commandHistory[-1..][0] != command
+      commandHistory[0...commandHistory.length - limit] = [] if commandHistory.length > limit
+    null

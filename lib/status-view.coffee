@@ -28,7 +28,7 @@ class StatusView extends View
   createTermView: ->
     statusIcon = document.createElement 'span'
     statusIcon.className = 'icon icon-terminal'
-    termView = new TermView statusIcon, this, @state.commandHistory.slice 0
+    termView = new TermView statusIcon, this, @state.commandHistory[..]
     @termViews.push termView
     @termStatusContainer.append statusIcon
     termView
