@@ -338,5 +338,5 @@ class TermView extends View
     limit = atom.config.get 'ult-terminal.commandHistorySize'
     for commandHistory in [@commandHistory, @statusView.state.commandHistory]
       commandHistory.push command if commandHistory[-1..][0] != command
-      commandHistory[0...commandHistory.length - limit] = [] if commandHistory.length > limit
+      commandHistory[...commandHistory.length - limit] = [] if commandHistory.length > limit
     null
