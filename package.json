@@ -18,7 +18,7 @@
     "fix-path": "^1.1.0",
     "fs-plus": "^2.8.1",
     "sub-atom": "^1.1.0",
-    "tree-kill": "UltCombo/node-tree-kill#darwin"
+    "tree-kill": "^1.0.0"
   },
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
