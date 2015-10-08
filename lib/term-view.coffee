@@ -1,5 +1,5 @@
 fs = require 'fs-plus'
-{resolve} = require 'path'
+{resolve, dirname} = require 'path'
 {exec} = require 'child_process'
 {View, TextEditorView} = require 'atom-space-pen-views'
 SubAtom = require 'sub-atom'
@@ -289,13 +289,22 @@ class TermView extends View
 
   getCwd: ->
     return @cwd if @cwd?
+    validRootDirs = atom.project.rootDirectories.filter (rootDir) ->
+      not rootDir.path.startsWith 'atom://'
     editorPath = atom.workspace.getActiveTextEditor()?.getPath()
     activeRootDir = null
-    return @cwd = activeRootDir.path if editorPath and atom.project.rootDirectories.some (rootDir) ->
-      if rootDir.contains(editorPath)
-        activeRootDir = rootDir
-        true
-    @cwd = atom.project.rootDirectories[0]?.path ? fs.getHomeDirectory()
+    @cwd =
+      if (editorPath and validRootDirs.some (rootDir) ->
+        if rootDir.contains editorPath
+          activeRootDir = rootDir
+          true
+      )
+        activeRootDir.path
+      else
+        validRootDirs[0]?.path ? fs.getHomeDirectory()
+
+    @cwd = dirname @cwd if try fs.statSync(@cwd).isDirectory() is false
+    @cwd
 
   spawn: (inputCmd) ->
     # @program = spawn cmd, args, stdio: 'pipe', env: process.env, cwd: @getCwd()
