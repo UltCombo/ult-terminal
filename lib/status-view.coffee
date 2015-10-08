@@ -7,7 +7,7 @@ class StatusView extends View
   @content: ->
     @div class: 'ult-terminal-status inline-block', =>
       @span outlet: 'termStatusContainer', =>
-        @span click: 'onNewTerm', class: 'icon icon-plus'
+        @span outlet: 'newTerminalButton', click: 'onNewTerm', class: 'icon icon-plus', title: 'Open new terminal'
 
   initialize: (state) ->
     @state = state ? {}
@@ -24,6 +24,8 @@ class StatusView extends View
       'ult-terminal:destroy': => @destroyActiveTerm()
 
     @subs.add atom.commands.add '.panel.ult-terminal', 'core:confirm', => @runActiveTermCommand()
+
+    @subs.add atom.tooltips.add @newTerminalButton, {}
 
   createTermView: ->
     statusIcon = document.createElement 'span'

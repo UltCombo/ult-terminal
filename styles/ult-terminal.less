@@ -77,6 +77,16 @@
 }
 
 .ult-terminal-status {
+  .icon {
+    cursor: pointer;
+  }
+  .icon-terminal {
+    border-bottom: solid 2px transparent;
+  }
+  .status-opened {
+    transition: border-color .15s;
+    border-bottom-color: initial;
+  }
   .status-running {
     color: hsl(180, 1, 0.5);
   }

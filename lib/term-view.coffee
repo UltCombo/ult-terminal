@@ -17,7 +17,7 @@ module.exports =
 class TermView extends View
   @content: ->
     @div tabIndex: -1, class: 'panel panel-right ult-terminal', =>
-      @div class: 'panel-heading', =>
+      @div class: 'panel-heading', outlet: 'heading', =>
         @div class: 'running-process-actions hide', outlet: 'runningProcessActions', =>
           @div class: 'btn-group pull-left', =>
             @button click: 'interrupt', class: 'btn', title: 'Send SIGINT to the running process (similar to pressing Ctrl+C in a regular terminal)', =>
@@ -78,6 +78,9 @@ class TermView extends View
         if not found
           @cmdEditor.getModel().setText @commandHistorySearchBuffer
           @commandHistoryIndex = null
+
+    for btn in @heading.find 'button[title]'
+      @subs.add atom.tooltips.add btn, {}
 
   readLine: ->
     inputCmd = @cmdEditor.getModel().getText()
@@ -165,12 +168,14 @@ class TermView extends View
     @scrollToBottom()
     @statusView.setActiveTermView this
     @cmdEditor.focus()
+    @statusIcon.classList.add 'status-opened'
 
   close: ->
     @lastLocation.activate()
     @detach()
     @pane?.destroy()
     lastOpenedView = null
+    @statusIcon.classList.remove 'status-opened'
 
   toggle: ->
     if @hasParent()
