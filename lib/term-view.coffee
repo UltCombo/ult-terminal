@@ -33,10 +33,9 @@ class TermView extends View
             @span 'Hide'
           @button click: 'destroy', class: 'btn', title: 'Kill the running process (if any) and destroy the terminal session', =>
             @span 'Quit'
-      @div class: 'cli-panel-body', =>
-        @pre tabIndex: -1, class: 'terminal native-key-bindings', outlet: 'cliOutput',
-          'Welcome to ult-terminal.\n'
-        @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
+      @pre tabIndex: -1, class: 'terminal native-key-bindings', outlet: 'cliOutput',
+        'Welcome to ult-terminal.\n'
+      @subview 'cmdEditor', new TextEditorView(mini: true, placeholderText: 'input your command here')
 
   initialize: (statusIcon, statusView, commandHistory) ->
     @statusIcon = statusIcon
