@@ -1,7 +1,7 @@
 {
   "name": "ult-terminal",
   "main": "./lib/ult-terminal",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "UltCombo's Atom terminal.",
   "homepage": "https://github.com/UltCombo/ult-terminal",
   "repository": {
